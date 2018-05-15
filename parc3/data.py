@@ -1,4 +1,4 @@
-import parc_reader
+import parc3
 import t4k
 import re
 import os
@@ -17,64 +17,6 @@ def get_article_num(article_fname):
 
 def get_parc_fname(doc_num):
     return 'wsj_%s' % str(doc_num).zfill(4)
-
-
-def get_raw_path(doc_num):
-    fname = get_parc_fname(doc_num)
-
-    # Determine the subdir by getting the hundreds from the doc_num
-    prefix_digits = doc_num / 100
-    if prefix_digits < 23:
-        raw_dir = SETTINGS.RAW_TRAIN_DIR
-    elif prefix_digits < 24:
-        raw_dir = SETTINGS.RAW_TEST_DIR
-    elif prefix_digits < 25:
-        raw_dir = SETTINGS.RAW_DEV_DIR
-    else:
-        raise ValueError(
-            "Parc data has no articles with ids in the range of %d00's."
-            % prefix_digits
-        )
-    subsubdir = str(prefix_digits).zfill(2)
-
-    return os.path.join(raw_dir, fname)
-
-
-def raw_article_exists(doc_num):
-    try:
-        open(get_raw_path(doc_num))
-    except IOError:
-        return False
-    return True
-
-
-def corenlp_article_exists(doc_num):
-    try:
-        open(get_corenlp_path(doc_num))
-    except IOError:
-        return False
-    return True
-
-
-def get_corenlp_path(doc_num):
-    fname = get_parc_fname(doc_num)
-
-    # Determine the subdir by getting the hundreds from the doc_num
-    prefix_digits = doc_num / 100
-    if prefix_digits < 23:
-        corenlp_dir = SETTINGS.CORENLP_TRAIN_DIR
-    elif prefix_digits < 24:
-        corenlp_dir = SETTINGS.CORENLP_TEST_DIR
-    elif prefix_digits < 25:
-        corenlp_dir = SETTINGS.CORENLP_DEV_DIR
-    else:
-        raise ValueError(
-            "Parc data has no articles with ids in the range of %d00's."
-            % prefix_digits
-        )
-    subsubdir = str(prefix_digits).zfill(2)
-
-    return os.path.join(corenlp_dir, fname + '.xml')
 
 
 def get_parc_path(doc_num):
@@ -105,20 +47,11 @@ def load_parc_doc(doc_num, include_nested=True):
     Loads a parc file into memory, but does not load the associated corenlp 
     annotations
     """
-    return parc_reader.new_parc_annotated_text.read_parc_file(
+    return parc3.parc_reader.read_parc_file(
         open(get_parc_path(doc_num)).read(), doc_num, include_nested
     )
 
 
-
-def load_article(doc_num):
-
-    parc_xml = open(get_parc_path(doc_num)).read()
-    corenlp_xml = open(get_corenlp_path(doc_num)).read()
-    raw_txt = open(get_raw_path(doc_num)).read()
-
-    return parc_reader.new_reader.ParcCorenlpReader(
-        corenlp_xml, parc_xml, raw_txt)
 
 
 def iter_doc_num(subset='train', skip=None, limit=None):
@@ -239,7 +172,7 @@ def show_attributions(attribution_ids, limit=None):
         }
     }
     serializer = (
-        parc_reader.attribution_html_serializer.AttributionHtmlSerializer())
+        parc3.attribution_html_serializer.AttributionHtmlSerializer())
     dom, body = serializer.prepare_dom(styling)
     for attribution in attributions:
         attribution_wrapper = body.appendChild(

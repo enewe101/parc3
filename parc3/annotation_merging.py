@@ -1,4 +1,4 @@
-import parc_reader
+import parc3
 import os
 import re
 import t4k
@@ -8,13 +8,12 @@ from collections import defaultdict, Counter
 
 
 BNP_PRONOUNS_PATH = os.path.join(
-    parc_reader.SETTINGS.BNP_DIR, 'data', 'BBN-wsj-pronouns', 'WSJ.pron')
+    parc3.SETTINGS.BNP, 'data', 'BBN-wsj-pronouns', 'WSJ.pron')
 BNP_SENTENCES_PATH = os.path.join(
-    parc_reader.SETTINGS.BNP_DIR, 'data', 'BBN-wsj-pronouns', 'WSJ.sent')
+    parc3.SETTINGS.BNP, 'data', 'BBN-wsj-pronouns', 'WSJ.sent')
 BBN_ENTITY_TYPES_DIR = os.path.join(
-    parc_reader.SETTINGS.BNP_DIR, 'data', 'WSJtypes-subtypes')
-PROPBANK_PATH = os.path.join(
-    parc_reader.SETTINGS.PROPBANK_DIR, 'data', 'vloc.txt')
+    parc3.SETTINGS.BNP, 'data', 'WSJtypes-subtypes')
+PROPBANK_PATH = os.path.join(parc3.SETTINGS.PROPBANK, 'data', 'vloc.txt')
 
 def read_bnp_pronoun_dataset(
     subset='all',
@@ -26,7 +25,7 @@ def read_bnp_pronoun_dataset(
     coreference_annotated_docs = read_coreference_annotations(
         subset=subset, skip=skip, limit=limit)
     entity_annotated_docs = read_bbn_entity_types(limit=limit)
-    attributions_by_doc = parc_reader.parc_dataset.read_all_parc_files(
+    attributions_by_doc = parc3.data.read_all_parc_files(
         subset=subset, skip=skip, limit=limit)
     propbank_verbs_by_doc = read_propbank_verbs()
 
@@ -35,7 +34,7 @@ def read_bnp_pronoun_dataset(
     merged_annotated_docs = {}
     seen_docs = set()
     expected_docs = list(
-        parc_reader.parc_dataset.iter_doc_num(subset, skip, limit))
+        parc3.data.iter_doc_num(subset, skip, limit))
     for doc_id in expected_docs:
 
         # Annotations could be missing for any given doc.  Just step over it.
@@ -94,7 +93,7 @@ def merge_propbank_verbs(annotated_doc, propbank_verbs):
 
         token['is_propbank_verb'] = True
         token_range = (token['sentence_id'], token['id'], token['id'] + 1)
-        propbank_verb_tokens[verb_id] = (parc_reader.spans.Span({
+        propbank_verb_tokens[verb_id] = (parc3.spans.Span({
             'lemma': lemma,
             'token_span': [token_range]
         }))
@@ -150,7 +149,7 @@ def find_nearest_exact_matching_token(
         try:
             check_token_id = absolute_token_id + distance
             found_lemma = annotated_doc.tokens[check_token_id]['lemma']
-            if parc_reader.annotated_document.is_same_token(lemma, found_lemma):
+            if parc3.annotated_document.is_same_token(lemma, found_lemma):
                 print 'found at +%d' % check_token_id
                 return annotated_doc.tokens[check_token_id]
         except IndexError:
@@ -160,7 +159,7 @@ def find_nearest_exact_matching_token(
         if check_token_id >= 0:
             try:
                 found_lemma = annotated_doc.tokens[check_token_id]['lemma']
-                is_same_token = parc_reader.annotated_document.is_same_token(
+                is_same_token = parc3.annotated_document.is_same_token(
                     lemma, found_lemma)
                 if is_same_token:
                     print 'found at +%d' % check_token_id
@@ -267,7 +266,7 @@ def make_coreference_annotated_text(
     doc_id
 ):
 
-    annotated_doc = parc_reader.annotated_document.AnnotatedDocument(
+    annotated_doc = parc3.annotated_document.AnnotatedDocument(
         tokens, sentences, 
         {'coreferences':coreferences, 'mentions': mentions},
         doc_id=doc_id
@@ -355,7 +354,7 @@ def parse_entity_type_doc(doc_tag):
                 tokens.append(token)
 
         else:
-            entity = parc_reader.spans.Span({
+            entity = parc3.spans.Span({
                 'id': len(entities),
                 'entity_type': tuple([child.name] + child['TYPE'].split(':')),
                 'text': child.text.strip()
@@ -375,7 +374,7 @@ def parse_entity_type_doc(doc_tag):
             min_id, max_id = min(token_ids), max(token_ids)
             entity.add_token_range((min_id, max_id+1))
 
-    return parc_reader.annotated_document.AnnotatedDocument(
+    return parc3.annotated_document.AnnotatedDocument(
         tokens=tokens, annotations={'entities':entities}, doc_id=doc_id)
 
 
@@ -391,7 +390,7 @@ def is_text_node(element):
 
 
 def tokens_2_token_span(tokens, absolute=True):
-    token_span = parc_reader.spans.TokenSpan()
+    token_span = parc3.spans.TokenSpan()
     curr_start = None
     last_id = None
     id_field = 'abs_id' if absolute else 'id'
@@ -457,7 +456,7 @@ def read_coreference_sentences_from_disk(path=BNP_SENTENCES_PATH, limit=None):
 
                 state = 'in_doc'
                 abs_token_id.reset()
-                new_token_list = parc_reader.token_list.TokenList()
+                new_token_list = parc3.token_list.TokenList()
                 document = {'sentences':[], 'tokens':new_token_list}
                 documents[doc_id] = document
 
@@ -481,7 +480,7 @@ def read_coreference_sentences_from_disk(path=BNP_SENTENCES_PATH, limit=None):
                         % (len(document['sentences']), sentence_id)
                     )
 
-                tokens = parc_reader.token_list.TokenList([
+                tokens = parc3.token_list.TokenList([
                     {
                         'id': i,                        # index within sentence
                         'abs_id': abs_token_id.next(),  # index within doc
@@ -495,7 +494,7 @@ def read_coreference_sentences_from_disk(path=BNP_SENTENCES_PATH, limit=None):
                 document['tokens'].extend(tokens)
                 end = len(document['tokens'])
 
-                document['sentences'].append(parc_reader.spans.Span({
+                document['sentences'].append(parc3.spans.Span({
                     'id': sentence_id,
                     'token_span': [(None, start, end)]
                 }, absolute=True))
@@ -534,7 +533,7 @@ def read_coreference_annotations(
     coref_info_by_doc = read_coreference_information_from_disk(limit=limit)
 
     coreference_annotated_docs = {}
-    for doc_id in parc_reader.parc_dataset.iter_doc_num(subset, skip, limit):
+    for doc_id in parc3.data.iter_doc_num(subset, skip, limit):
 
         try:
             sentences = coref_sentences_by_doc[doc_id]
@@ -629,7 +628,7 @@ def accumulate_representative(mentions, antecedent_ids):
         antecedent = mentions[antecedent_id]
 
         if representative is None:
-            representative = parc_reader.spans.Span(
+            representative = parc3.spans.Span(
                 antecedent, mention_type='representative')
 
         else:
@@ -729,7 +728,7 @@ def parse_coreference_annotations(text_to_parse, limit=None):
 
 
 def correct_token_offset_error(mention):
-    mention['token_span'] = parc_reader.spans.TokenSpan([
+    mention['token_span'] = parc3.spans.TokenSpan([
         (sent_id, start - 1, end - 1) 
         for sent_id, start, end in mention['token_span']
     ])
@@ -750,7 +749,7 @@ def parse_mention(line):
     mention_type, location_spec, text = t4k.stripped(line.split('->'))
     sentence_id, start, stop = parse_location_spec(location_spec)
 
-    return parc_reader.spans.Span(
+    return parc3.spans.Span(
         mention_type=mention_type.lower(),
         sentence_id=sentence_id,
         token_span=[(sentence_id, start, stop)],

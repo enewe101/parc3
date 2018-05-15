@@ -1,4 +1,4 @@
-import parc_reader
+import parc3
 
 class Span(dict):
     """
@@ -61,7 +61,7 @@ class Constituency(Span):
 
 
 def get_dfs_constituents(node):
-    return parc_reader.utils.get_dfs_sequence(node, get_constituency_children)
+    return parc3.utils.get_dfs_sequence(node, get_constituency_children)
 
 
 def get_constituency_children(node):
@@ -69,7 +69,7 @@ def get_constituency_children(node):
         return node['constituent_children']
     except KeyError:
         if node['constituent_type'] != 'token':
-            raise parc_reader.exceptions.ConstituentIntegrityError(
+            raise parc3.exceptions.ConstituentIntegrityError(
                 "Constituents that have no children must be of type 'token', "
                 "but this childless constituent is of type '%s'" % 
                 node['constituent_type']
@@ -111,7 +111,7 @@ class Attribution(dict):
             self[span_type].absolutize(doc)
 
 
-
+# TODO: override .append and .extend
 class TokenSpan(list):
     """
     Serves as a pointer to a specific subset of tokens in a document.
@@ -290,7 +290,7 @@ class TokenSpan(list):
 
     def get_single_range(self):
         if not self.is_single_range():
-            raise parc_reader.exceptions.NonSingleRangeError(
+            raise parc3.exceptions.NonSingleRangeError(
                 'This token span has multiple ranges.')
         return self[0]
 
@@ -346,6 +346,6 @@ class TokenSpan(list):
     #            )
     #        choose_from_tokens = sentence_list[sentence_id].tokens()
     #        selected.extend(choose_from_tokens[start:end])
-    #    return parc_reader.token_list.TokenList(selected)
+    #    return parc3.token_list.TokenList(selected)
 
 

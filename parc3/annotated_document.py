@@ -1,5 +1,5 @@
 import re
-import parc_reader
+import parc3
 import t4k
 
 
@@ -14,7 +14,7 @@ class AnnotatedDocument(object):
 
         self.doc_id = doc_id
         self.annotations = annotations or {}
-        self.tokens = parc_reader.token_list.TokenList(tokens or [])
+        self.tokens = parc3.token_list.TokenList(tokens or [])
 
         self.sentences = []
         if sentences is not None:
@@ -34,7 +34,7 @@ class AnnotatedDocument(object):
         # Do some validating
         if 'token_span' not in sentence:
             raise ValueError("`sentence['token_span']` must be TokenSpan-like")
-        sentence = parc_reader.spans.Span(sentence, absolute=True)
+        sentence = parc3.spans.Span(sentence, absolute=True)
         self.validate_sentence_span(sentence)
 
         # Add the sentence
@@ -81,7 +81,7 @@ class AnnotatedDocument(object):
 
     def get_tokens_abs(self, span):
         span = self.span_or_token_span(span)
-        selected = parc_reader.token_list.TokenList()
+        selected = parc3.token_list.TokenList()
         for _, start, end in span:
             selected.extend(self.tokens[start:end])
         return selected
@@ -95,7 +95,7 @@ class AnnotatedDocument(object):
                 'This annotated document has no sentence information')
 
         span = self.span_or_token_span(span)
-        selected = parc_reader.token_list.TokenList()
+        selected = parc3.token_list.TokenList()
         for sentence_id, start, stop in span:
             selected.extend(self.get_sentence_tokens(sentence_id)[start:stop])
         return selected

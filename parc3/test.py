@@ -1,26 +1,26 @@
-from collections import defaultdict
 from unittest import main, TestCase
-from parc_reader.new_reader import ParcCorenlpReader, ROLES
-import parc_reader
+from collections import defaultdict
+import parc3
 import t4k
 
 
 class TestReadAllAnnotations(TestCase):
 
     def test_read_all_annotations(self):
-        dataset = parc_reader.bnp_pronouns_reader.read_bnp_pronoun_dataset(
+        dataset = parc3.annotation_merging.read_bnp_pronoun_dataset(
             skip=0,limit=20)
         print len(dataset)
+
 
 
 class TestMergingPropbankVerbs(TestCase):
 
     def setUp(self):
         self.propbank_verbs_by_doc = (
-            parc_reader.bnp_pronouns_reader.read_propbank_verbs())
+            parc3.annotation_merging.read_propbank_verbs())
 
     def get_test_docs(self, doc_id):
-        parc_doc = parc_reader.parc_dataset.load_parc_doc(
+        parc_doc = parc3.data.load_parc_doc(
             doc_id, include_nested=False)
         propbank_verbs = self.propbank_verbs_by_doc[doc_id]
         return parc_doc, propbank_verbs
@@ -34,7 +34,7 @@ class TestMergingPropbankVerbs(TestCase):
     def do_test_one_doc_for_propbank_merging(self, doc_id):
 
         parc_doc, propbank_verbs = self.get_test_docs(doc_id)
-        parc_reader.bnp_pronouns_reader.merge_propbank_verbs(
+        parc3.annotation_merging.merge_propbank_verbs(
             parc_doc, propbank_verbs)
 
         for verb_id, (sentence_id,token_id,lemma) in enumerate(propbank_verbs):
@@ -51,63 +51,58 @@ class TestMergingPropbankVerbs(TestCase):
 
 
 
-
-
-
-
-
 class TestTokenSpan(TestCase):
 
     def test_bad_span(self):
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan([(0, 0, 0)])
+            parc3.spans.TokenSpan([(0, 0, 0)])
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan([(0, 1, 0)])
+            parc3.spans.TokenSpan([(0, 1, 0)])
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan(single_range=(0, 0, 0))
+            parc3.spans.TokenSpan(single_range=(0, 0, 0))
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan(single_range=(0, 1, 0))
+            parc3.spans.TokenSpan(single_range=(0, 1, 0))
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan([(0, 1, 0)], absolute=True)
+            parc3.spans.TokenSpan([(0, 1, 0)], absolute=True)
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan([(None, 1, 0)])
+            parc3.spans.TokenSpan([(None, 1, 0)])
         with self.assertRaises(ValueError):
-            parc_reader.spans.TokenSpan(single_range=(0,1))
+            parc3.spans.TokenSpan(single_range=(0,1))
 
 
     def test_consolidation(self):
 
         # Consolidation when one span is adjacent to another
-        t1 = parc_reader.spans.TokenSpan([(0,0,1), (0,1,2)])
-        t2 = parc_reader.spans.TokenSpan([(0,0,2)])
+        t1 = parc3.spans.TokenSpan([(0,0,1), (0,1,2)])
+        t2 = parc3.spans.TokenSpan([(0,0,2)])
         self.assertEqual(t1, t2)
 
         # Consolidating when one span subsumes another
-        t1 = parc_reader.spans.TokenSpan([(0,0,2), (0,1,3)])
-        t2 = parc_reader.spans.TokenSpan([(0,0,3)])
+        t1 = parc3.spans.TokenSpan([(0,0,2), (0,1,3)])
+        t2 = parc3.spans.TokenSpan([(0,0,3)])
         self.assertEqual(t1, t2)
 
         # Consolidation of unordered ranges works, and equality is maintained.
-        t1 = parc_reader.spans.TokenSpan([(0,1,2), (0,0,1)])
-        t2 = parc_reader.spans.TokenSpan([(0,0,2)])
+        t1 = parc3.spans.TokenSpan([(0,1,2), (0,0,1)])
+        t2 = parc3.spans.TokenSpan([(0,0,2)])
         self.assertEqual(t1, t2)
 
         # Equality is not affected by order.
-        t1 = parc_reader.spans.TokenSpan([(0,2,3), (0,0,1)])
-        t2 = parc_reader.spans.TokenSpan([(0,0,1), (0,2,3)])
+        t1 = parc3.spans.TokenSpan([(0,2,3), (0,0,1)])
+        t2 = parc3.spans.TokenSpan([(0,0,1), (0,2,3)])
         self.assertEqual(t1, t2)
 
 
     def test_good_span(self):
-        parc_reader.spans.TokenSpan(single_range=(0,0,1))
-        parc_reader.spans.TokenSpan(single_range=(0,1), absolute=True)
-        parc_reader.spans.TokenSpan(single_range=(None,0,1), absolute=True)
+        parc3.spans.TokenSpan(single_range=(0,0,1))
+        parc3.spans.TokenSpan(single_range=(0,1), absolute=True)
+        parc3.spans.TokenSpan(single_range=(None,0,1), absolute=True)
 
 
     def test_len(self):
-        empty_span = parc_reader.spans.TokenSpan()
+        empty_span = parc3.spans.TokenSpan()
         self.assertEqual(len(empty_span), 0)
-        span_with_overlaps = parc_reader.spans.TokenSpan(
+        span_with_overlaps = parc3.spans.TokenSpan(
             [(0,3), (1,4)], absolute=True)
         self.assertEqual(len(span_with_overlaps), 4)
 
@@ -124,9 +119,9 @@ class TestReadParcFile(TestCase):
 
     def get_test_doc(self, include_nested=True):
         first_interesting_article = 3
-        path = parc_reader.parc_dataset.get_parc_path(first_interesting_article)
+        path = parc3.data.get_parc_path(first_interesting_article)
         xml = open(path).read()
-        return parc_reader.new_parc_annotated_text.read_parc_file(
+        return parc3.parc_reader.read_parc_file(
             xml, include_nested=include_nested)
 
 
@@ -250,7 +245,7 @@ class TestReadParcFile(TestCase):
         found_dfs_sequence = [
             (depth, node['constituent_type']) 
             for depth, node in 
-            parc_reader.spans.get_dfs_constituents(constituent)
+            parc3.spans.get_dfs_constituents(constituent)
         ]
         expected_dfs_sequence = [
             (0, u's'), (1, u's-tpc-1'), (2, u'np-sbj'), (3, u'np'), (4, u'np'),
@@ -295,7 +290,7 @@ class TestReadParcFile(TestCase):
         
         # Now check that all other constituents have correct sentence-relative
         # token spans
-        nodes_in_dfs_order = parc_reader.spans.get_dfs_constituents(
+        nodes_in_dfs_order = parc3.spans.get_dfs_constituents(
             self.doc.sentences[TEST_SENTENCE_INDEX])
 
         max_end = t4k.Max()
@@ -306,7 +301,7 @@ class TestReadParcFile(TestCase):
             if depth == 0:
                 continue
 
-            self.assertEqual(len(node['token_span']), 1)
+            self.assertTrue(node['token_span'].is_single_range())
             sentence_id, start, end = node['token_span'][0]
             max_end.add(end)
 
@@ -321,8 +316,8 @@ class TestReadParcFile(TestCase):
             if not past_first_token:
                 self.assertEqual(start, 0)
 
-            for child in parc_reader.spans.get_constituency_children(node):
-                self.assertEqual(len(child['token_span']), 1)
+            for child in parc3.spans.get_constituency_children(node):
+                self.assertTrue(child['token_span'].is_single_range())
                 token_span = child['token_span'][0]
                 child_sentence_id, child_start, child_end = token_span
                 self.assertEqual(child_sentence_id, sentence_id)
@@ -349,309 +344,6 @@ class TestReadParcFile(TestCase):
         self.assertEqual(max_end.max_key(), sent_abs_end - sent_abs_start)
         
 
-
-
-
-
-
-
-def get_test_texts(article_num, include_parc=True):
-    texts = []
-    texts.append(open('data/example-corenlp-%d.xml' % article_num).read())
-    if include_parc:
-        texts.append(open('data/example-parc-%d.xml' % article_num).read())
-    texts.append(open('data/example-raw-%d.txt' % article_num).read())
-    return texts
-
-
-def get_test_article(article_num, include_parc=True):
-    return ParcCorenlpReader(*get_test_texts(article_num, include_parc))
-
-
-class TestReader(TestCase):
-
-    def test_add_attributions_incremental(self):
-        # Open an article, but exclude the parc file
-        article_with_attributions = get_test_article(1)
-        article_no_attributions = get_test_article(1, include_parc=False)
-
-        # One copy of the file has no attributions.
-        self.assertEqual(len(article_with_attributions.attributions), 25)
-        self.assertEqual(len(article_no_attributions.attributions), 0)
-
-        # We'll add an atttribution to the article that has none.  Base it 
-        # on one of the actual attributions
-        attr_id = 'wsj_0018_PDTB_annotation_level.xml_set_5'
-        attr = article_with_attributions.attributions[attr_id]
-
-        article_no_attributions.add_attribution(attribution_id=attr_id)
-
-        # Add tokens to the recently added attribution
-        article_no_attributions.add_to_attribution(
-            attr_id, 'source', attr['source'])
-
-        # Add tokens, this time using sentence_id, token_id tuples
-        article_no_attributions.add_to_attribution(
-            attr_id, 'cue', [(t['sentence_id'], t['id']) for t in attr['cue']])
-
-        # Add the tokens for the content
-        article_no_attributions.add_to_attribution(
-            attr_id, 'content', attr['content'])
-        
-        # Check that the attribution now exists and has the correct structure
-        added_attr = article_no_attributions.attributions[attr_id]
-
-        # Check correctness of source
-        expected_source = [(9, 0), (9, 1)]
-        self.assertEqual(
-            expected_source, 
-            [(t['sentence_id'], t['id']) for t in added_attr['source']]
-        )
-
-        # Check correctness of cue
-        expected_cue = [(9, 2), (9, 3)]
-        self.assertEqual(
-            expected_cue, 
-            [(t['sentence_id'], t['id']) for t in added_attr['cue']]
-        )
-
-        # Check correctness of content
-        expected_content = [
-            (9, 4), (9, 5), (9, 6), (9, 7), (9, 8), (9, 9), (9, 10), (9, 11), 
-            (9, 12), (9, 13), (9, 14), (9, 15), (9, 16), (9, 17), (9, 18)
-        ]
-        self.assertEqual(
-            expected_content, 
-            [(t['sentence_id'], t['id']) for t in added_attr['content']]
-        )
-
-        # Check that all of the tokens involved in the attribution got the 
-        # proper role and link to the attribution, and that no others did
-        token_roles = {
-            'source': set(expected_source),
-            'cue': set(expected_cue),
-            'content': set(expected_content)
-        }
-        for sentence in article_no_attributions.sentences:
-
-            # Check that all of the tokens involved in the attribution got the 
-            # proper role and link to the attribution, and that no others did
-            for token in sentence['tokens']:
-                sentence_id, token_id = token['sentence_id'], token['id']
-                for role in ROLES:
-
-                    # If this token has a role in the attribution, make sure
-                    # we see it on the token
-                    if (sentence_id, token_id) in token_roles[role]:
-                        self.assertEqual(token['attributions'].keys(),[attr_id])
-                        self.assertTrue(role in token['attributions'][attr_id])
-
-                        # also check that the sentence records its association
-                        # to this attribution
-                        self.assertTrue(attr_id in sentence['attributions'])
-                        self.assertEqual(len(sentence['attributions']), 1)
-
-                    # If the token doesn't belong to this role in the
-                    # attribution then we shouldn't see that role on the token.
-                    else:
-
-                        # We should see no entries for any attributions
-                        if attr_id not in token['attributions']:
-                            self.assertEqual(len(token['attributions']), 0)
-
-                        # Or if this token might have a different role, but
-                        # on the same attribution.  Still, it should not show
-                        # this role.
-                        else:
-                            self.assertEqual(
-                                token['attributions'].keys(),[attr_id])
-                            self.assertTrue(
-                                role not in token['attributions'][attr_id])
-
-
-    def test_add_attributions(self):
-
-        # Open an article, but exclude the parc file
-        article_with_attributions = get_test_article(1)
-        article_no_attributions = get_test_article(1, include_parc=False)
-
-        # One copy of the file has no attributions.
-        self.assertEqual(len(article_with_attributions.attributions), 25)
-        self.assertEqual(len(article_no_attributions.attributions), 0)
-
-        # We'll add an atttribution to the article that has none.  Base it 
-        # on one of the actual attributions
-        attr_id = 'wsj_0018_PDTB_annotation_level.xml_set_5'
-        attr = article_with_attributions.attributions[attr_id]
-
-        article_no_attributions.add_attribution(
-            attr['cue'], attr['content'], attr['source'], attr_id
-        )
-        
-        # Check that the attribution now exists and has the correct structure
-        added_attr = article_no_attributions.attributions[attr_id]
-
-        # Check correctness of source
-        expected_source = [(9, 0), (9, 1)]
-        self.assertEqual(
-            expected_source, 
-            [(t['sentence_id'], t['id']) for t in added_attr['source']]
-        )
-
-        # Check correctness of cue
-        expected_cue = [(9, 2), (9, 3)]
-        self.assertEqual(
-            expected_cue, 
-            [(t['sentence_id'], t['id']) for t in added_attr['cue']]
-        )
-
-        # Check correctness of content
-        expected_content = [
-            (9, 4), (9, 5), (9, 6), (9, 7), (9, 8), (9, 9), (9, 10), (9, 11), 
-            (9, 12), (9, 13), (9, 14), (9, 15), (9, 16), (9, 17), (9, 18)
-        ]
-        self.assertEqual(
-            expected_content, 
-            [(t['sentence_id'], t['id']) for t in added_attr['content']]
-        )
-
-        # Check that all of the tokens involved in the attribution got the 
-        # proper role and link to the attribution, and that no others did
-        token_roles = {
-            'source': set(expected_source),
-            'cue': set(expected_cue),
-            'content': set(expected_content)
-        }
-        for sentence in article_no_attributions.sentences:
-
-            # Check that all of the tokens involved in the attribution got the 
-            # proper role and link to the attribution, and that no others did
-            for token in sentence['tokens']:
-                sentence_id, token_id = token['sentence_id'], token['id']
-                for role in ROLES:
-
-                    # If this token has a role in the attribution, make sure
-                    # we see it on the token
-                    if (sentence_id, token_id) in token_roles[role]:
-                        self.assertEqual(token['attributions'].keys(),[attr_id])
-                        self.assertTrue(role in token['attributions'][attr_id])
-
-                        # also check that the sentence records its association
-                        # to this attribution
-                        self.assertTrue(attr_id in sentence['attributions'])
-                        self.assertEqual(len(sentence['attributions']), 1)
-
-                    # If the token doesn't belong to this role in the
-                    # attribution then we shouldn't see that role on the token.
-                    else:
-
-                        # We should see no entries for any attributions
-                        if attr_id not in token['attributions']:
-                            self.assertEqual(len(token['attributions']), 0)
-
-                        # Or if this token might have a different role, but
-                        # on the same attribution.  Still, it should not show
-                        # this role.
-                        else:
-                            self.assertEqual(
-                                token['attributions'].keys(),[attr_id])
-                            self.assertTrue(
-                                role not in token['attributions'][attr_id])
-
-
-
-    def test_reader(self):
-
-        # Get a first article to test.
-        article1 = get_test_article(1)
-        self.assertEqual(len(article1.attributions), 25)
-
-        # Get a second article to test.
-        article2 = get_test_article(2)
-
-        # First, check that the correct number of attributions were identified
-        # (should only be one)
-        self.assertEqual(len(article2.attributions), 1)
-
-        # Now check the structure of that attribution.  This attribution is
-        # somewhat special because the source and cue actually coincide,
-        # meaning that those tokens have two roles within the attribution.
-        attr = article2.attributions['wsj_1655_PDTB_annotation_level.xml_set_0']
-
-        # Check that the correct tokens for the source were found
-        expected_source = [(15, 4), (15, 5)]
-        self.assertEqual(
-            expected_source,
-            [(t['sentence_id'], t['id']) for t in attr['source']]
-        )
-
-        # Check that the correct tokens for the cue were found
-        expected_cue = [(15, 4), (15, 5)]
-        self.assertEqual(
-            expected_cue,
-            [(t['sentence_id'], t['id']) for t in attr['cue']]
-        )
-
-        # Check that the correct tokens for the content were found
-        sentence_ids = range(15,27)
-        token_ranges = [(15,50), (5,), (16,), (4,), (28,), (5,), (5,), 
-            (30,), (11,), (10,), (20,), (7,) ]
-        expected_content = [
-            (i, k) for i,j in zip(sentence_ids, token_ranges)
-            for k in range(*j)
-        ]
-        self.assertEqual(
-            expected_content,
-            [(t['sentence_id'], t['id']) for t in attr['content']]
-        )
-
-
-    def test_writing_parc_xml(self):
-        """
-        Test that a write-read cycle preserves the attribution structure
-        """
-        self.do_read_write_test(1)
-        self.do_read_write_test(2)
-
-
-    def do_read_write_test(self, article_num):
-
-        # First, open an article, and immediately serialize it to disc using
-        # the article.get_parc_xml() function
-        article = get_test_article(article_num)
-        open('data/test-parc-output-%d.xml' % article_num, 'w').write(
-            article.get_parc_xml())
-
-        # Now read the serialized version of the xml (along with the original
-        # corenlp and raw files).  It should give the exact same datastructure.
-        reread_article = ParcCorenlpReader(
-            open('data/example-corenlp-%d.xml' % article_num).read(),
-            open('data/test-parc-output-%d.xml' % article_num).read(),
-            open('data/example-raw-%d.txt' % article_num).read()
-        )
-
-        # First test that they have the same number of attributions
-        self.assertEqual(
-            len(reread_article.attributions), len(article.attributions))
-
-        # Then test that each attribution contains the same tokens in the same
-        # roles
-        for attr_id, attr in article.attributions.items():
-            reread_attr = reread_article.attributions[attr_id]
-            for role in ROLES:
-                tokens = [(t['sentence_id'], t['id']) for t in attr[role]]
-                reread_tokens = [
-                    (t['sentence_id'], t['id']) 
-                    for t in reread_attr[role]
-                ]
-                self.assertEqual(reread_tokens, tokens)
-
-        # Finally test that attribution associations written onto the tokens
-        # and sentences themselves match too.
-        for sent1, sent2 in zip(article.sentences, reread_article.sentences):
-            self.assertEqual(sent1['attributions'], sent2['attributions'])
-            for token1, token2 in zip(sent1['tokens'], sent2['tokens']):
-                self.assertEqual(token1['attributions'], token2['attributions'])
 
 if __name__ == '__main__':
     main()
