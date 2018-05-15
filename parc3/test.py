@@ -99,6 +99,39 @@ class TestTokenSpan(TestCase):
         parc3.spans.TokenSpan(single_range=(None,0,1), absolute=True)
 
 
+    def test_adding_ranges(self):
+
+        # if `absolute=False`, ranges must have integer sentence_id
+        span = parc3.spans.TokenSpan()
+        with self.assertRaises(ValueError):
+            span.append((None, 0, 1))
+        span.append((0,0,1))
+        self.assertEqual(span.get_single_range(), (0,0,1))
+
+        # If `absolute=True`, appended ranges must have `sentence_id=None`
+        span = parc3.spans.TokenSpan(absolute=True)
+        span.append((None,0,1))
+        self.assertEqual(span.get_single_range(), (None,0,1))
+        with self.assertRaises(ValueError):
+            span.append((0, 0, 1))
+
+        # If `absolute=True`, appending multiple ranges that have
+        # `sentence_id=None`.  Raise value error if `sentence_id` is an `int`
+        span = parc3.spans.TokenSpan(absolute=True)
+        span.extend([(None, 0,1), (None, 1,5)])
+        self.assertEqual(span.get_single_range(), (None, 0,5))
+        with self.assertRaises(ValueError):
+            span.extend([(0, 0, 1), (None, 1, 5)])
+
+        # If `absolute=True`, appending multiple ranges that have
+        # `sentence_id=None`.  Raise value error if `sentence_id` is an `int`
+        span = parc3.spans.TokenSpan()
+        span.extend([(0, 0, 1), (0, 1, 5)])
+        self.assertEqual(span.get_single_range(), (0, 0, 5))
+        with self.assertRaises(ValueError):
+            span.extend([(0, 0, 1), (None, 1, 5)])
+
+
     def test_len(self):
         empty_span = parc3.spans.TokenSpan()
         self.assertEqual(len(empty_span), 0)

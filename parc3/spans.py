@@ -170,11 +170,6 @@ class TokenSpan(list):
         self.replace_with(new_span)
 
 
-    def add_token_ranges(self, token_ranges):
-        for token_range in token_ranges:
-            self.add_token_range(token_range, skip_consolidation=True)
-        self.consolidate()
-
 
     def _normalize_range(self, token_range):
         """Handle ommitting sentence_id when specifying a token range."""
@@ -204,6 +199,20 @@ class TokenSpan(list):
                 "The start index of the token range must be less "
                 "than the end index"
             )
+
+
+    def append(self, token_range):
+        self.add_token_range(token_range)
+
+
+    def extend(self, token_ranges):
+        self.add_token_ranges(token_ranges)
+
+
+    def add_token_ranges(self, token_ranges):
+        for token_range in token_ranges:
+            self.add_token_range(token_range, skip_consolidation=True)
+        self.consolidate()
 
 
     def add_token_range(self, token_range, skip_consolidation=False):

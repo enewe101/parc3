@@ -244,7 +244,6 @@ class AnnotatedDocument(object):
         return token, remainder_token
 
 
-    # TODO: alter this to use the new implementation of write_token_ids()
     def insert_token(self, abs_index, token):
 
         # Insert the new token in the global tokens list
