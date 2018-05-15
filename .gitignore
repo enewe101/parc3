@@ -1,0 +1,15 @@
+build
+dist
+*.egg-info
+*.tgz
+*.pyc
+*.swp
+*.swo
+parc_reader/data/test-parc-output-1.xml
+parc_reader/data/test-parc-output-2.xml
+SETTINGS.py
+bbn-pcet
+propbank_1
+CoreNLP
+masked_raw
+del
